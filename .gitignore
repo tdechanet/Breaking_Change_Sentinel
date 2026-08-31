@@ -1,0 +1,22 @@
+# Environments (uv)
+.venv/
+env/
+venv/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Tool Caches (MyPy, Ruff, Pytest)
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Secrets & Config
+.env
+.env.*
+
+# OS generated files
+.DS_Store
+Thumbs.db
