@@ -4,7 +4,7 @@ Module for parsing Python source code and identifying deprecated usages via AST.
 
 import ast
 from pathlib import Path
-from typing import Dict, List, Set, Any
+from typing import Any
 
 
 class DeprecationAnalyzer(ast.NodeVisitor):
@@ -14,8 +14,8 @@ class DeprecationAnalyzer(ast.NodeVisitor):
 
     def __init__(self, target_module: str) -> None:
         self.target_module = target_module
-        self.found_imports: Set[str] = set()
-        self.found_decorators: List[Dict[str, Any]] = []
+        self.found_imports: set[str] = set()
+        self.found_decorators: list[dict[str, Any]] = []
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """
@@ -42,7 +42,7 @@ class DeprecationAnalyzer(ast.NodeVisitor):
         self.generic_visit(node)
 
 
-def parse_file_for_deprecations(file_path: Path, target_module: str) -> Dict[str, Any]:
+def parse_file_for_deprecations(file_path: Path, target_module: str) -> dict[str, Any]:
     """
     Parses a Python file and extracts deprecated usages related to the target module.
     """
