@@ -75,10 +75,13 @@ class MigrationVectorStore:
         Returns:
             A list of dictionaries containing 'content' and 'metadata'.
         """
-        # TODO: Call self.client.query_points() with:
-        # collection_name=self.collection_name,
-        # query=models.Document(text=query, model=self.model_name),
-        # limit=limit
 
-        # TODO: Extract and return [{"content": hit.payload["content"], "metadata": hit.payload["metadata"]} for hit in results.points]
-        return []
+        search_result = self.client.query_points(
+            collection_name=self.collection_name,
+            query=models.Document(text=query, model=self.model_name),
+            limit=limit,
+        )
+
+        hits = [hit.payload for hit in search_result.points if hit.payload is not None]
+
+        return hits
