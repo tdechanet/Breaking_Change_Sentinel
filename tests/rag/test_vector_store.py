@@ -1,28 +1,33 @@
 """
-Unit tests for the Qdrant vector store integration.
+Unit tests for hybrid search (Dense + Sparse BM25).
 """
 
 from breaking_change_sentinel.rag.vector_store import MigrationVectorStore
 
 
-def test_vector_store_indexing_and_search() -> None:
-    """Tests if chunks are correctly embedded, stored, and retrieved."""
+def test_hybrid_search_resolves_decorator_ambiguity() -> None:
+    """
+    Tests that hybrid search correctly ranks exact keyword matches
+    over semantically similar but syntactically distinct decorators.
+    """
     store = MigrationVectorStore(location=":memory:")
 
     sample_chunks = [
         {
-            "content": "The `validator` decorator is deprecated. Use `field_validator` instead.",
-            "metadata": {"Header 2": "Changes in Pydantic V2"},
+            "content": "The @validator decorator is deprecated in Pydantic v2. Use @field_validator instead.",
+            "metadata": {"decorator": "validator"},
         },
         {
-            "content": "BaseSettings has been moved to `pydantic-settings`.",
-            "metadata": {"Header 3": "BaseSettings"},
+            "content": "The @root_validator decorator is deprecated in Pydantic v2. Use @model_validator instead.",
+            "metadata": {"decorator": "root_validator"},
         },
     ]
 
     store.index_chunks(sample_chunks)
-    results = store.search(query="How do I migrate BaseSettings?", limit=1)
+
+    # Requête avec token exact
+    results = store.search(query="How to migrate @root_validator syntax?", limit=1)
 
     assert len(results) == 1
-    assert "pydantic-settings" in results[0]["content"]
-    assert results[0]["metadata"]["Header 3"] == "BaseSettings"
+    assert results[0]["metadata"]["decorator"] == "root_validator"
+    assert "@model_validator" in results[0]["content"]
