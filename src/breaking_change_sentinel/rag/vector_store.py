@@ -6,6 +6,7 @@ from typing import Any
 
 from qdrant_client import QdrantClient, models
 from fastembed import SparseTextEmbedding, TextEmbedding
+import uuid
 
 
 class MigrationVectorStore:
@@ -67,20 +68,18 @@ class MigrationVectorStore:
         if not chunks:
             return
 
-        chunks_ids = list(range(len(chunks)))  # Attribute an id to each chunk
-
         list_of_content = [doc["content"] for doc in chunks]
 
         dense_embedding = self._dense_embedder.embed(list_of_content)
         sparse_embedding = self._sparse_embedder.embed(list_of_content)
 
         points: list[models.PointStruct] = []
-        for id, chunk, dense_emb, sparse_emb in zip(
-            chunks_ids, chunks, dense_embedding, sparse_embedding
+        for chunk, dense_emb, sparse_emb in zip(
+            chunks, dense_embedding, sparse_embedding
         ):
             points.append(
                 models.PointStruct(
-                    id=id,
+                    id=str(uuid.uuid4()),
                     payload=chunk,
                     vector={
                         self.DENSE_VECTOR_NAME: dense_emb.tolist(),
@@ -92,7 +91,7 @@ class MigrationVectorStore:
                 )
             )
 
-            self.client.upsert(collection_name=self.collection_name, points=points)
+        self.client.upsert(collection_name=self.collection_name, points=points)
 
     def search(self, query: str, limit: int = 3) -> list[dict[str, Any]]:
         """
