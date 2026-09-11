@@ -4,6 +4,7 @@ Module for managing the Qdrant vector database and document embeddings.
 
 import uuid
 from typing import Any
+from path import Path
 
 from fastembed import SparseTextEmbedding, TextEmbedding
 from qdrant_client import QdrantClient, models
@@ -22,7 +23,7 @@ class MigrationVectorStore:
     def __init__(
         self,
         collection_name: str = "migration_docs",
-        location: str = ":memory:",
+        path: str | Path | None = None,
         dense_model: str = DEFAULT_DENSE_MODEL,
         sparse_model: str = DEFAULT_SPARSE_MODEL,
     ) -> None:
@@ -32,9 +33,12 @@ class MigrationVectorStore:
         self.collection_name = collection_name
         self.dense_model = dense_model
         self.sparse_model = sparse_model
-        self.client = QdrantClient(location)
+        if path is not None:
+            self.client = QdrantClient(path=str(path))
+        else:
+            self.client = QdrantClient(location=":memory:")
 
-        self._dense_embedder = TextEmbedding()
+        self._dense_embedder = TextEmbedding(model_name=self.dense_model)
         self._sparse_embedder = SparseTextEmbedding(model_name=self.sparse_model)
 
         self._ensure_collection_exists()

@@ -14,7 +14,7 @@ def populated_vector_store() -> MigrationVectorStore:
     """
     Instantiates an in-memory vector store populated with realistic migration rules.
     """
-    store = MigrationVectorStore(location=":memory:")
+    store = MigrationVectorStore()
 
     corpus: list[dict[str, Any]] = [
         {

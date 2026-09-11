@@ -35,7 +35,7 @@ def test_ingest_directory_populates_vector_store(tmp_path: Path) -> None:
     )
 
     # 2. Ingest via in-memory vector store
-    store = MigrationVectorStore(location=":memory:")
+    store = MigrationVectorStore()
     pipeline = DocumentationIngestionPipeline(vector_store=store)
 
     total_chunks = pipeline.ingest_directory(docs_dir)
@@ -54,7 +54,7 @@ def test_ingest_empty_or_missing_directory(tmp_path: Path) -> None:
     """
     Ensures robust handling when given an empty or non-existent path.
     """
-    store = MigrationVectorStore(location=":memory:")
+    store = MigrationVectorStore()
     pipeline = DocumentationIngestionPipeline(vector_store=store)
 
     missing_dir = tmp_path / "non_existent"

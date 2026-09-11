@@ -11,6 +11,7 @@ dependencies = [
     "fastembed>=0.8.0",
     "flashrank>=0.2.10",
     "langchain-text-splitters>=1.1.2",
+    "path>=17.1.1",
     "qdrant-client>=1.19.0",
 ]
 
