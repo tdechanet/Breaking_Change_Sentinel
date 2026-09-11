@@ -3,6 +3,7 @@ Integration tests for the documentation ingestion pipeline.
 """
 
 from pathlib import Path
+
 from breaking_change_sentinel.rag.ingestion import DocumentationIngestionPipeline
 from breaking_change_sentinel.rag.vector_store import MigrationVectorStore
 

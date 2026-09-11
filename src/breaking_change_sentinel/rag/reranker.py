@@ -3,6 +3,7 @@ Module providing cross-encoder reranking capabilities using FlashRank.
 """
 
 from typing import Any
+
 from flashrank import Ranker, RerankRequest
 
 

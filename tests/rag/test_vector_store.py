@@ -3,7 +3,9 @@ Integration and behavioral tests for hybrid search (Dense + BM25 RRF).
 """
 
 from typing import Any
+
 import pytest
+
 from breaking_change_sentinel.rag.vector_store import MigrationVectorStore
 
 

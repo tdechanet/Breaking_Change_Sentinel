@@ -2,11 +2,11 @@
 Module for managing the Qdrant vector database and document embeddings.
 """
 
+import uuid
 from typing import Any
 
-from qdrant_client import QdrantClient, models
 from fastembed import SparseTextEmbedding, TextEmbedding
-import uuid
+from qdrant_client import QdrantClient, models
 
 
 class MigrationVectorStore:
