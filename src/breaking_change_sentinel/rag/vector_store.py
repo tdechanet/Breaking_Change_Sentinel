@@ -4,7 +4,7 @@ Module for managing the Qdrant vector database and document embeddings.
 
 import uuid
 from typing import Any
-from path import Path
+from pathlib import Path
 
 from fastembed import SparseTextEmbedding, TextEmbedding
 from qdrant_client import QdrantClient, models
