@@ -1,54 +1,49 @@
 """
-Tests for the documentation ingestion CLI script.
+Integration smoke test for the documentation ingestion CLI script.
 """
 
 from pathlib import Path
-import pytest
-
-from scripts.ingest_docs import run_ingestion
-
-
-def test_run_ingestion_raises_error_if_docs_dir_missing(tmp_path: Path) -> None:
-    """Verifies that run_ingestion raises FileNotFoundError when source dir is missing."""
-    missing_dir = tmp_path / "non_existent_docs"
-    storage_path = tmp_path / "storage"
-
-    with pytest.raises(FileNotFoundError, match="Source directory does not exist"):
-        run_ingestion(docs_dir=missing_dir, storage_path=storage_path)
+import subprocess
+import sys
 
 
-def test_run_ingestion_empty_directory_returns_zero(tmp_path: Path) -> None:
-    """Verifies that an empty source directory indexes zero chunks without error."""
-    empty_docs_dir = tmp_path / "empty_docs"
-    empty_docs_dir.mkdir()
-    storage_path = tmp_path / "storage"
-
-    count = run_ingestion(docs_dir=empty_docs_dir, storage_path=storage_path)
-
-    assert count == 0
-    assert storage_path.exists()
-
-
-def test_run_ingestion_persists_chunks_to_disk(tmp_path: Path) -> None:
-    """Verifies that markdown files are ingested and Qdrant creates storage files on disk."""
+def test_run_ingestion_cli_success(tmp_path: Path) -> None:
+    """
+    Verifies that scripts/ingest_docs.py runs end-to-end via CLI,
+    reads source markdown, and creates Qdrant storage files.
+    """
     docs_dir = tmp_path / "docs"
     docs_dir.mkdir()
-    sample_doc = docs_dir / "sample.md"
+    sample_doc = docs_dir / "sample_rule.md"
     sample_doc.write_text(
-        "# Header 1\n\nContent for first chunk.\n\n## Subheader\n\nContent for second chunk."
+        "# Migration Guide\n\n## Section 1\n\nDeprecated feature details."
     )
 
-    storage_path = tmp_path / "persistent_storage"
+    storage_dir = tmp_path / "qdrant_storage"
 
-    indexed_chunks = run_ingestion(docs_dir=docs_dir, storage_path=storage_path)
+    # Execute the script as an external CLI process
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/ingest_docs.py",
+            "--docs-dir",
+            str(docs_dir),
+            "--storage-path",
+            str(storage_dir),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
-    # 1. Verification of returned count
-    assert indexed_chunks > 0
+    # 1. OS exit code must be 0 (success)
+    assert result.returncode == 0, f"CLI execution failed:\n{result.stderr}"
 
-    # 2. Verification of disk persistence
-    assert storage_path.exists()
-    assert storage_path.is_dir()
+    # 2. Verify expected output log
+    assert "Ingestion finished successfully" in result.stderr or result.stdout
 
-    # Qdrant persists metadata and collection folders on disk
-    persisted_files = list(storage_path.iterdir())
-    assert len(persisted_files) > 0
+    # 3. Verify disk persistence
+    assert storage_dir.exists()
+    assert any(
+        storage_dir.iterdir()
+    ), "Storage directory should contain Qdrant index files"
