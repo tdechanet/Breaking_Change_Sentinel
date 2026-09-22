@@ -53,8 +53,8 @@ def main() -> None:
     parser.add_argument(
         "--docs-dir",
         type=Path,
-        default=Path("data/migration_docs"),
-        help="Source directory containing markdown documentation (default: data/migration_docs)",
+        default=Path("data/migration"),
+        help="Source directory containing markdown documentation (default: data/migration)",
     )
     parser.add_argument(
         "--storage-path",
