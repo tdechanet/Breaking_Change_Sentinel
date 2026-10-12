@@ -21,7 +21,9 @@ class UserModel(BaseModel):
         return v
 """
     state = create_initial_state(
-        file_path=Path("models.py"), source_code=code_with_issues
+        file_path=Path("models.py"),
+        source_code=code_with_issues,
+        target_module="pydantic",
     )
 
     update = analyze_ast_node(state)
@@ -45,7 +47,9 @@ class UserModel(BaseModel):
     def validate_name(cls, v: str) -> str:
         return v
 """
-    state = create_initial_state(file_path=Path("clean.py"), source_code=clean_code)
+    state = create_initial_state(
+        file_path=Path("clean.py"), source_code=clean_code, target_module="pydantic"
+    )
 
     update = analyze_ast_node(state)
 
@@ -56,7 +60,9 @@ class UserModel(BaseModel):
 def test_analyze_ast_node_syntax_error_handled_gracefully() -> None:
     """Verifies that syntax errors do not crash the node and are reported as issues."""
     broken_code = "class IncompleteModel(BaseModel):\n    def def def"
-    state = create_initial_state(file_path=Path("broken.py"), source_code=broken_code)
+    state = create_initial_state(
+        file_path=Path("broken.py"), source_code=broken_code, target_module="pydantic"
+    )
 
     update = analyze_ast_node(state)
 

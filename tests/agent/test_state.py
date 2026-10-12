@@ -13,7 +13,9 @@ def test_create_initial_state_success() -> None:
     file_path = Path("src/models.py")
     source_code = "from pydantic import BaseModel\n\nclass User(BaseModel): pass"
 
-    state = create_initial_state(file_path=file_path, source_code=source_code)
+    state = create_initial_state(
+        file_path=file_path, source_code=source_code, target_module="pydantic"
+    )
 
     assert state["file_path"] == file_path
     assert state["source_code"] == source_code
@@ -30,7 +32,9 @@ def test_create_initial_state_success() -> None:
 def test_create_initial_state_empty_code_raises_error() -> None:
     """Verifies that an empty source code string raises a ValueError."""
     with pytest.raises(ValueError, match="Source code cannot be empty"):
-        create_initial_state(file_path=Path("dummy.py"), source_code="   \n ")
+        create_initial_state(
+            file_path=Path("dummy.py"), source_code="   \n ", target_module="pydantic"
+        )
 
 
 def test_create_initial_state_invalid_max_iterations_raises_error() -> None:
@@ -39,5 +43,6 @@ def test_create_initial_state_invalid_max_iterations_raises_error() -> None:
         create_initial_state(
             file_path=Path("dummy.py"),
             source_code="print('ok')",
+            target_module="pydantic",
             max_iterations=0,
         )
