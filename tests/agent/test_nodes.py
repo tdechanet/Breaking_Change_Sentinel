@@ -34,8 +34,8 @@ class UserModel(BaseModel):
     assert "validator" in issue_types or "deprecated_decorator" in issue_types
 
 
-def test_analyze_ast_node_clean_code_returns_empty_list() -> None:
-    """Verifies that clean code yields an empty detected_issues list."""
+def test_analyze_ast_node_extracts_all_target_usages() -> None:
+    """Verifies that the AST node extracts all usages for downstream RAG evaluation."""
     clean_code = """
 from pydantic import BaseModel, field_validator
 
@@ -43,7 +43,6 @@ class UserModel(BaseModel):
     name: str
 
     @field_validator("name")
-    @classmethod
     def validate_name(cls, v: str) -> str:
         return v
 """
@@ -54,7 +53,9 @@ class UserModel(BaseModel):
     update = analyze_ast_node(state)
 
     assert "detected_issues" in update
-    assert len(update["detected_issues"]) == 0
+    names = [issue["name"] for issue in update["detected_issues"]]
+    assert "BaseModel" in names
+    assert "field_validator" in names
 
 
 def test_analyze_ast_node_syntax_error_handled_gracefully() -> None:

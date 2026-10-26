@@ -42,15 +42,24 @@ class DeprecationAnalyzer(ast.NodeVisitor):
         self.generic_visit(node)
 
 
-def parse_file_for_deprecations(file_path: Path, target_module: str) -> dict[str, Any]:
+def parse_code_for_deprecations(source_code: str, target_module: str) -> dict[str, Any]:
     """
-    Parses a Python file and extracts deprecated usages related to the target module.
+    Parses Python source code string and extracts deprecated usages.
     """
 
-    content = file_path.read_text(encoding="utf-8")
-    tree = ast.parse(content)
+    tree = ast.parse(source_code)
 
     analyzer = DeprecationAnalyzer(target_module)
     analyzer.visit(tree)
 
     return {"imports": analyzer.found_imports, "decorators": analyzer.found_decorators}
+
+
+def parse_file_for_deprecations(file_path: Path, target_module: str) -> dict[str, Any]:
+    """
+    Parses a Python file and extracts deprecated usages related to the target module.
+    """
+
+    return parse_code_for_deprecations(
+        file_path.read_text(encoding="utf-8"), target_module
+    )

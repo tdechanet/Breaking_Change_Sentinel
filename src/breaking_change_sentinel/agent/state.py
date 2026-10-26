@@ -27,7 +27,7 @@ class AgentState(TypedDict):
 
     file_path: Path
     source_code: str
-    target_module: Path
+    target_module: str
     detected_issues: list[dict[str, Any]]
     retrieved_rules: list[dict[str, Any]]
     patched_code: str | None
@@ -42,7 +42,7 @@ class AgentState(TypedDict):
 def create_initial_state(
     file_path: Path,
     source_code: str,
-    target_module: Path,
+    target_module: str,
     test_command: str = "pytest",
     max_iterations: int = 3,
 ) -> AgentState:
