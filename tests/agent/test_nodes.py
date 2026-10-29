@@ -4,8 +4,12 @@ Unit tests for the LangGraph agent execution nodes.
 
 from pathlib import Path
 
-from breaking_change_sentinel.agent.nodes import analyze_ast_node
+from breaking_change_sentinel.agent.nodes import (
+    analyze_ast_node,
+    retrieve_documentation_node,
+)
 from breaking_change_sentinel.agent.state import create_initial_state
+from unittest.mock import MagicMock, patch
 
 
 def test_analyze_ast_node_detects_deprecated_validators() -> None:
@@ -70,3 +74,50 @@ def test_analyze_ast_node_syntax_error_handled_gracefully() -> None:
     assert "detected_issues" in update
     assert len(update["detected_issues"]) == 1
     assert update["detected_issues"][0]["type"] == "syntax_error"
+
+
+@patch("breaking_change_sentinel.agent.nodes.MigrationVectorStore")
+def test_retrieve_documentation_node_with_issues(mock_store_class: MagicMock) -> None:
+    """Verifies that documentation is retrieved and deduplicated for detected issues."""
+    # Configure the mock to return a dummy document
+    mock_instance = MagicMock()
+    mock_instance.search.return_value = [
+        {"content": "Use field_validator instead of validator.", "score": 0.95}
+    ]
+    mock_store_class.return_value = mock_instance
+
+    state = create_initial_state(
+        file_path=Path("dummy.py"),
+        source_code="dummy code",
+        target_module="pydantic",
+    )
+    state["detected_issues"] = [
+        {"type": "deprecated_decorator", "name": "validator", "line": 5},
+        {"type": "deprecated_import", "name": "validator"},
+    ]
+
+    update = retrieve_documentation_node(state)
+
+    assert "retrieved_rules" in update
+    assert len(update["retrieved_rules"]) == 1
+    assert "field_validator" in update["retrieved_rules"][0]["content"]
+    assert mock_instance.search.call_count == 2
+
+
+@patch("breaking_change_sentinel.agent.nodes.MigrationVectorStore")
+def test_retrieve_documentation_node_empty_issues(mock_store_class: MagicMock) -> None:
+    """Verifies that retrieval is skipped if no issues are present."""
+    mock_instance = MagicMock()
+    mock_store_class.return_value = mock_instance
+
+    state = create_initial_state(
+        file_path=Path("dummy.py"),
+        source_code="dummy code",
+        target_module="pydantic",
+    )
+
+    update = retrieve_documentation_node(state)
+
+    assert "retrieved_rules" in update
+    assert len(update["retrieved_rules"]) == 0
+    mock_instance.search.assert_not_called()
