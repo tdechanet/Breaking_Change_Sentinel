@@ -14,7 +14,7 @@ class AgentState(TypedDict):
         file_path: Path to the target python file being refactored.
         source_code: Original content of the target file.
         target_module: The library we are trying to update.
-        detected_issues: Deprecated syntax nodes detected by the AST parser.
+        extracted_usages: Deprecated syntax nodes detected by the AST parser.
         retrieved_rules: Documentation chunks retrieved from the vector store.
         patched_code: LLM-generated refactored code.
         test_command: Command executed to test the modified code.
@@ -28,7 +28,7 @@ class AgentState(TypedDict):
     file_path: Path
     source_code: str
     target_module: str
-    detected_issues: list[dict[str, Any]]
+    extracted_usages: list[dict[str, Any]]
     retrieved_rules: list[dict[str, Any]]
     patched_code: str | None
     test_command: str
@@ -72,7 +72,7 @@ def create_initial_state(
         file_path=file_path,
         source_code=source_code,
         target_module=target_module,
-        detected_issues=[],
+        extracted_usages=[],
         retrieved_rules=[],
         patched_code=None,
         test_command=test_command,
