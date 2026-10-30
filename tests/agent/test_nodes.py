@@ -7,6 +7,7 @@ from pathlib import Path
 from breaking_change_sentinel.agent.nodes import (
     analyze_ast_node,
     retrieve_documentation_node,
+    generate_patch_node,
 )
 from breaking_change_sentinel.agent.state import create_initial_state
 from unittest.mock import MagicMock, patch
@@ -125,3 +126,35 @@ def test_retrieve_documentation_node_empty_issues(mock_store_class: MagicMock) -
     assert "retrieved_rules" in update
     assert len(update["retrieved_rules"]) == 0
     mock_instance.search.assert_not_called()
+
+
+@patch("breaking_change_sentinel.agent.nodes.completion")
+def test_generate_patch_node_applies_fixes(mock_completion: MagicMock) -> None:
+    """Verifies that the LLM is called and raw patched code is extracted cleanly."""
+
+    # Configuration du mock LiteLLM
+    mock_message = MagicMock()
+    mock_message.content = "```python\nclass UserModel(BaseModel):\n    pass\n```"
+    mock_choice = MagicMock()
+    mock_choice.message = mock_message
+    mock_response = MagicMock()
+    mock_response.choices = [mock_choice]
+    mock_completion.return_value = mock_response
+
+    state = create_initial_state(
+        file_path=Path("dummy.py"),
+        source_code="class UserModel(BaseModel): pass",
+        target_module="pydantic",
+    )
+    state["detected_issues"] = [{"name": "validator"}]
+    state["retrieved_rules"] = [{"content": "Use field_validator instead."}]
+
+    update = generate_patch_node(state)
+
+    assert "patched_code" in update
+    assert "class UserModel" in update["patched_code"]
+
+    # Vérification stricte du nettoyage des balises Markdown
+    assert "```python" not in update["patched_code"]
+    assert "```" not in update["patched_code"]
+    mock_completion.assert_called_once()
