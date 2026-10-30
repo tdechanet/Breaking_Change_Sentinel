@@ -19,7 +19,7 @@ def test_create_initial_state_success() -> None:
 
     assert state["file_path"] == file_path
     assert state["source_code"] == source_code
-    assert state["detected_issues"] == []
+    assert state["extracted_usages"] == []
     assert state["retrieved_rules"] == []
     assert state["patched_code"] is None
     assert state["test_passed"] is False

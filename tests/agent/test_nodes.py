@@ -32,9 +32,9 @@ class UserModel(BaseModel):
 
     update = analyze_ast_node(state)
 
-    assert "detected_issues" in update
-    assert len(update["detected_issues"]) > 0
-    issue_types = [issue["type"] for issue in update["detected_issues"]]
+    assert "extracted_usages" in update
+    assert len(update["extracted_usages"]) > 0
+    issue_types = [issue["type"] for issue in update["extracted_usages"]]
     assert "validator" in issue_types or "deprecated_decorator" in issue_types
 
 
@@ -56,8 +56,8 @@ class UserModel(BaseModel):
 
     update = analyze_ast_node(state)
 
-    assert "detected_issues" in update
-    names = [issue["name"] for issue in update["detected_issues"]]
+    assert "extracted_usages" in update
+    names = [issue["name"] for issue in update["extracted_usages"]]
     assert "BaseModel" in names
     assert "field_validator" in names
 
@@ -71,9 +71,9 @@ def test_analyze_ast_node_syntax_error_handled_gracefully() -> None:
 
     update = analyze_ast_node(state)
 
-    assert "detected_issues" in update
-    assert len(update["detected_issues"]) == 1
-    assert update["detected_issues"][0]["type"] == "syntax_error"
+    assert "extracted_usages" in update
+    assert len(update["extracted_usages"]) == 1
+    assert update["extracted_usages"][0]["type"] == "syntax_error"
 
 
 @patch("breaking_change_sentinel.agent.nodes.MigrationVectorStore")
@@ -82,7 +82,11 @@ def test_retrieve_documentation_node_with_issues(mock_store_class: MagicMock) ->
     # Configure the mock to return a dummy document
     mock_instance = MagicMock()
     mock_instance.search.return_value = [
-        {"content": "Use field_validator instead of validator.", "score": 0.95}
+        {
+            "content": "Use field_validator instead of validator.",
+            "score": 0.95,
+            "metadata": {"chunk_id": "chunk_123", "source": "docs/migration.md"},
+        }
     ]
     mock_store_class.return_value = mock_instance
 
@@ -91,7 +95,7 @@ def test_retrieve_documentation_node_with_issues(mock_store_class: MagicMock) ->
         source_code="dummy code",
         target_module="pydantic",
     )
-    state["detected_issues"] = [
+    state["extracted_usages"] = [
         {"type": "deprecated_decorator", "name": "validator", "line": 5},
         {"type": "deprecated_import", "name": "validator"},
     ]
