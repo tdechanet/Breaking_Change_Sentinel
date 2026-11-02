@@ -4,7 +4,8 @@ Execution nodes for the LangGraph code migration agent.
 
 import ast
 import logging
-from typing import Any
+from typing import Any, cast
+from litellm import completion
 
 from breaking_change_sentinel.agent.state import AgentState
 from breaking_change_sentinel.parser.ast_parser import parse_code_for_deprecations
@@ -86,3 +87,50 @@ def retrieve_documentation_node(state: AgentState) -> dict[str, Any]:
         "detected_issues": detected_issues,
         "retrieved_rules": list(retrieved_rules_dict.values()),
     }
+
+
+def generate_patch_node(state: AgentState) -> dict[str, Any]:
+    """
+    Generates refactored code using an LLM based on detected issues and RAG rules.
+
+    Args:
+        state: Current graph state containing source code, issues, and rules.
+
+    Returns:
+        Partial state update dictionary containing 'patched_code'.
+    """
+    detected_issues = state["detected_issues"]
+    source_code = state["source_code"]
+
+    if not detected_issues:
+        logger.info("No issues to patch. Keeping original code.")
+        return {"patched_code": source_code}
+
+    retrieved_rules = state["retrieved_rules"]
+
+    SYSTEM_PROMPT = """
+        You're job is to update potentially deprecated code using the provided documentation.
+        YOU SHOULD STRICTLY RETURN READY TO USE PYTHON CODE WITH NO FORMATING OR TEXT FOR THE USER.
+    """
+
+    USER_PROMPT = f"""
+        {source_code},
+        {detected_issues},
+        {retrieved_rules}
+    """
+
+    response = cast(
+        Any,
+        completion(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": USER_PROMPT},
+            ],
+        ),
+    )
+
+    txt_gen = response.choices[0].message.content
+    txt_clean = txt_gen.replace("```python\n", "").replace("```", "")
+
+    return {"patched_code": txt_clean}

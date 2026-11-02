@@ -12,6 +12,7 @@ dependencies = [
     "flashrank>=0.2.10",
     "langchain-text-splitters>=1.1.2",
     "langgraph>=1.2.12",
+    "litellm>=1.106.6",
     "path>=17.1.1",
     "qdrant-client>=1.19.0",
 ]
