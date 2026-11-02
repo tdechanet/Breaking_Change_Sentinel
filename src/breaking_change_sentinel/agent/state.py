@@ -30,6 +30,7 @@ class AgentState(TypedDict):
     source_code: str
     target_module: str
     extracted_usages: list[dict[str, Any]]
+    detected_issues: list[dict[str, Any]]
     retrieved_rules: list[dict[str, Any]]
     patched_code: str | None
     test_command: str
@@ -74,6 +75,7 @@ def create_initial_state(
         source_code=source_code,
         target_module=target_module,
         extracted_usages=[],
+        detected_issues=[],
         retrieved_rules=[],
         patched_code=None,
         test_command=test_command,
