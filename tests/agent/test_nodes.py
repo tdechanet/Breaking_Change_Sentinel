@@ -8,6 +8,7 @@ from breaking_change_sentinel.agent.nodes import (
     analyze_ast_node,
     retrieve_documentation_node,
     generate_patch_node,
+    validate_patch_node,
 )
 from breaking_change_sentinel.agent.state import create_initial_state
 from unittest.mock import MagicMock, patch
@@ -158,3 +159,35 @@ def test_generate_patch_node_applies_fixes(mock_completion: MagicMock) -> None:
     assert "```python" not in update["patched_code"]
     assert "```" not in update["patched_code"]
     mock_completion.assert_called_once()
+
+
+@patch("breaking_change_sentinel.agent.nodes.subprocess.run")
+def test_validate_patch_node_successful_run(
+    mock_run: MagicMock, tmp_path: Path
+) -> None:
+    """Verifies that the file is backed up, tested, and restored properly."""
+    test_file = tmp_path / "target.py"
+    test_file.write_text("original code")
+
+    state = create_initial_state(
+        file_path=test_file,
+        source_code="original code",
+        target_module="pydantic",
+    )
+    state["patched_code"] = "patched code"
+
+    mock_result = MagicMock()
+    mock_result.returncode = 0
+    mock_result.stdout = "1 passed"
+    mock_result.stderr = ""
+    mock_run.return_value = mock_result
+
+    update = validate_patch_node(state)
+
+    assert update["test_passed"] is True
+    assert "1 passed" in update["test_output"]
+    mock_run.assert_called_once()
+
+    # Check that the file was restored and backup cleaned up
+    assert test_file.read_text() == "original code"
+    assert not test_file.with_suffix(".bak").exists()
