@@ -6,6 +6,8 @@ import ast
 import logging
 from typing import Any, cast
 from litellm import completion
+import subprocess
+import shutil
 
 from breaking_change_sentinel.agent.state import AgentState
 from breaking_change_sentinel.parser.ast_parser import parse_code_for_deprecations
@@ -134,3 +136,33 @@ def generate_patch_node(state: AgentState) -> dict[str, Any]:
     txt_clean = txt_gen.replace("```python\n", "").replace("```", "")
 
     return {"patched_code": txt_clean}
+
+
+def validate_patch_node(state: AgentState) -> dict[str, Any]:
+    """
+    Writes the patched code to disk, runs pytest, and captures the results.
+    Restores the original file immediately after testing.
+    """
+    patched_code = state["patched_code"]
+    file_path = state["file_path"]
+    source_code = state["source_code"]
+
+    if not patched_code or patched_code == source_code:
+        logger.info("No patch generated or identical to source. Bypassing tests.")
+        return {"test_output": "No changes made.", "test_passed": True}
+
+    backup_path = file_path.with_suffix(".bak")
+
+    shutil.copy(file_path, backup_path)
+
+    try:
+        file_path.write_text(patched_code)
+        result = subprocess.run(
+            ["pytest", str(f"test_{file_path}")], capture_output=True, text=True
+        )
+        test_passed = result.returncode == 0
+        output = result.stdout + "\n" + result.stderr
+    finally:
+        shutil.move(backup_path, file_path)
+
+    return {"test_output": output, "test_passed": test_passed}
